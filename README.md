@@ -293,6 +293,6 @@ If you have any questions or need support:
 
 ---
 
-**Built with ❤️ by @adityagnss**
+**Built with Bolt.new by @adityagnss**
 
 *Connecting farmers directly with buyers for a sustainable future.*
