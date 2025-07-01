@@ -21,6 +21,12 @@ export type Database = {
           phone: string | null
           address: string | null
           avatar_url: string | null
+          bank_account_number: string | null
+          bank_name: string | null
+          account_holder_name: string | null
+          ifsc_code: string | null
+          bank_branch: string | null
+          banking_verified: boolean | null
           created_at: string
           updated_at: string
         }
@@ -32,6 +38,12 @@ export type Database = {
           phone?: string | null
           address?: string | null
           avatar_url?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          account_holder_name?: string | null
+          ifsc_code?: string | null
+          bank_branch?: string | null
+          banking_verified?: boolean | null
           created_at?: string
           updated_at?: string
         }
@@ -43,6 +55,12 @@ export type Database = {
           phone?: string | null
           address?: string | null
           avatar_url?: string | null
+          bank_account_number?: string | null
+          bank_name?: string | null
+          account_holder_name?: string | null
+          ifsc_code?: string | null
+          bank_branch?: string | null
+          banking_verified?: boolean | null
           created_at?: string
           updated_at?: string
         }

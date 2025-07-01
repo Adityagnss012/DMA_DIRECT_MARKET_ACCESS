@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { User, Mail, Phone, MapPin, Calendar, Edit, Save, X, Camera } from 'lucide-react'
+import { User, Mail, Phone, MapPin, Calendar, Edit, Save, X, Camera, CreditCard, Building, Shield } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../ui/Button'
@@ -16,7 +16,13 @@ export const ProfileSection: React.FC = () => {
     full_name: profile?.full_name || '',
     phone: profile?.phone || '',
     address: profile?.address || '',
-    avatar_url: profile?.avatar_url || ''
+    avatar_url: profile?.avatar_url || '',
+    // Banking information
+    bank_account_number: profile?.bank_account_number || '',
+    bank_name: profile?.bank_name || '',
+    account_holder_name: profile?.account_holder_name || '',
+    ifsc_code: profile?.ifsc_code || '',
+    bank_branch: profile?.bank_branch || ''
   })
 
   const handleEdit = () => {
@@ -25,7 +31,12 @@ export const ProfileSection: React.FC = () => {
       full_name: profile?.full_name || '',
       phone: profile?.phone || '',
       address: profile?.address || '',
-      avatar_url: profile?.avatar_url || ''
+      avatar_url: profile?.avatar_url || '',
+      bank_account_number: profile?.bank_account_number || '',
+      bank_name: profile?.bank_name || '',
+      account_holder_name: profile?.account_holder_name || '',
+      ifsc_code: profile?.ifsc_code || '',
+      bank_branch: profile?.bank_branch || ''
     })
   }
 
@@ -35,24 +46,54 @@ export const ProfileSection: React.FC = () => {
       full_name: profile?.full_name || '',
       phone: profile?.phone || '',
       address: profile?.address || '',
-      avatar_url: profile?.avatar_url || ''
+      avatar_url: profile?.avatar_url || '',
+      bank_account_number: profile?.bank_account_number || '',
+      bank_name: profile?.bank_name || '',
+      account_holder_name: profile?.account_holder_name || '',
+      ifsc_code: profile?.ifsc_code || '',
+      bank_branch: profile?.bank_branch || ''
     })
   }
 
   const handleSave = async () => {
     if (!user || !profile) return
 
+    // Validate banking information for farmers
+    if (profile.role === 'farmer' && isEditing) {
+      if (formData.bank_account_number && formData.ifsc_code) {
+        if (formData.bank_account_number.length < 9 || formData.bank_account_number.length > 18) {
+          toast.error('Bank account number must be between 9-18 digits')
+          return
+        }
+        if (formData.ifsc_code.length !== 11) {
+          toast.error('IFSC code must be exactly 11 characters')
+          return
+        }
+      }
+    }
+
     setLoading(true)
 
     try {
+      const updateData: any = {
+        full_name: formData.full_name.trim(),
+        phone: formData.phone.trim(),
+        address: formData.address.trim(),
+        avatar_url: formData.avatar_url.trim() || null
+      }
+
+      // Add banking information for farmers
+      if (profile.role === 'farmer') {
+        updateData.bank_account_number = formData.bank_account_number.trim() || null
+        updateData.bank_name = formData.bank_name.trim() || null
+        updateData.account_holder_name = formData.account_holder_name.trim() || null
+        updateData.ifsc_code = formData.ifsc_code.trim() || null
+        updateData.bank_branch = formData.bank_branch.trim() || null
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .update({
-          full_name: formData.full_name.trim(),
-          phone: formData.phone.trim(),
-          address: formData.address.trim(),
-          avatar_url: formData.avatar_url.trim() || null
-        })
+        .update(updateData)
         .eq('id', user.id)
 
       if (error) throw error
@@ -84,6 +125,12 @@ export const ProfileSection: React.FC = () => {
       </div>
     )
   }
+
+  const isBankingComplete = profile.role === 'farmer' && 
+    profile.bank_account_number && 
+    profile.bank_name && 
+    profile.account_holder_name && 
+    profile.ifsc_code
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -150,6 +197,27 @@ export const ProfileSection: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* Banking Status Alert for Farmers */}
+        {profile.role === 'farmer' && !isBankingComplete && (
+          <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0">
+                <div className="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center">
+                  <CreditCard className="h-3 w-3 text-white" />
+                </div>
+              </div>
+              <div>
+                <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">
+                  Complete Your Banking Information
+                </h4>
+                <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                  Add your banking details to receive payments when buyers purchase your products.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Profile Details */}
@@ -256,6 +324,143 @@ export const ProfileSection: React.FC = () => {
             )}
           </div>
         </Card>
+
+        {/* Banking Information (Farmers Only) */}
+        {profile.role === 'farmer' && (
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                Banking Information
+              </h2>
+              {isBankingComplete && (
+                <div className="flex items-center space-x-2 text-green-600 dark:text-green-400">
+                  <Shield className="h-4 w-4" />
+                  <span className="text-sm font-medium">Verified</span>
+                </div>
+              )}
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Account Holder Name
+                </label>
+                {isEditing ? (
+                  <Input
+                    name="account_holder_name"
+                    value={formData.account_holder_name}
+                    onChange={handleChange}
+                    placeholder="Name as per bank account"
+                    icon={<User className="h-5 w-5" />}
+                  />
+                ) : (
+                  <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <User className="h-5 w-5 text-gray-400" />
+                    <span className="text-gray-900 dark:text-white">
+                      {profile.account_holder_name || 'Not provided'}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Bank Account Number
+                </label>
+                {isEditing ? (
+                  <Input
+                    name="bank_account_number"
+                    value={formData.bank_account_number}
+                    onChange={handleChange}
+                    placeholder="Enter bank account number"
+                    icon={<CreditCard className="h-5 w-5" />}
+                  />
+                ) : (
+                  <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <CreditCard className="h-5 w-5 text-gray-400" />
+                    <span className="text-gray-900 dark:text-white font-mono">
+                      {profile.bank_account_number 
+                        ? `****${profile.bank_account_number.slice(-4)}`
+                        : 'Not provided'
+                      }
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Bank Name
+                </label>
+                {isEditing ? (
+                  <Input
+                    name="bank_name"
+                    value={formData.bank_name}
+                    onChange={handleChange}
+                    placeholder="e.g., State Bank of India"
+                    icon={<Building className="h-5 w-5" />}
+                  />
+                ) : (
+                  <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <Building className="h-5 w-5 text-gray-400" />
+                    <span className="text-gray-900 dark:text-white">
+                      {profile.bank_name || 'Not provided'}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  IFSC Code
+                </label>
+                {isEditing ? (
+                  <Input
+                    name="ifsc_code"
+                    value={formData.ifsc_code}
+                    onChange={handleChange}
+                    placeholder="e.g., SBIN0001234"
+                    maxLength={11}
+                  />
+                ) : (
+                  <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <span className="text-gray-900 dark:text-white font-mono">
+                      {profile.ifsc_code || 'Not provided'}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Bank Branch
+                </label>
+                {isEditing ? (
+                  <Input
+                    name="bank_branch"
+                    value={formData.bank_branch}
+                    onChange={handleChange}
+                    placeholder="Branch name (optional)"
+                  />
+                ) : (
+                  <div className="flex items-center space-x-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <span className="text-gray-900 dark:text-white">
+                      {profile.bank_branch || 'Not provided'}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {!isBankingComplete && !isEditing && (
+                <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                  <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                    Complete your banking information to receive payments from buyers.
+                  </p>
+                </div>
+              )}
+            </div>
+          </Card>
+        )}
 
         {/* Account Information */}
         <Card className="p-6">
